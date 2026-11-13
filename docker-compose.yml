@@ -1,0 +1,34 @@
+# Build pack "Docker Compose" di Coolify (app + PostgreSQL).
+# Juga bisa dijalankan lokal: docker compose up --build
+services:
+  app:
+    build: .
+    environment:
+      - PORT=3000
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - GREETING=${GREETING:-Halo dari Coolify (compose)!}
+      - DATABASE_URL=postgres://demo:${POSTGRES_PASSWORD:-demo-password}@db:5432/demo
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=demo
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-demo-password}
+      - POSTGRES_DB=demo
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db-data:
